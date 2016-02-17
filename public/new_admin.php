@@ -10,7 +10,7 @@ if (isset($_POST['submit'])) {
 // Process the form
 
     $username = mysql_prep($_POST["username"]);
-    $password = mysql_prep($_POST["password"]);
+    $password = password_encrypt($_POST["password"]);
 
 // validations
     $required_fields = array("username", "password");
