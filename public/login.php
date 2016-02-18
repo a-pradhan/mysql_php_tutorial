@@ -1,17 +1,15 @@
 <?php require_once("../includes/session.php"); ?>
 <?php require_once("../includes/db_connection.php"); ?>
 <?php require_once("../includes/functions.php"); ?>
-<?php confirm_logged_in(); ?>
 <?php $layout_context = "admin"; ?>
 <?php include("../includes/layouts/header.php"); ?>
 <?php require_once("../includes/validation_functions.php"); ?>
 
 <?php
+$username = "";
 if (isset($_POST['submit'])) {
 // Process the form
 
-    $username = mysql_prep($_POST["username"]);
-    $password = password_encrypt($_POST["password"]);
 
 // validations
     $required_fields = array("username", "password");
@@ -22,25 +20,24 @@ if (isset($_POST['submit'])) {
 
     if (!empty($errors)) {
         $_SESSION["errors"] = $errors;
-        redirect_to("new_admin.php");
+        redirect_to("login.php");
     }
+    // set variables for query
+    $username = $_POST["username"];
+    $password = $_POST["password"];
 
-    $query = "INSERT INTO admins (";
-    $query .= "username, hashed_password";
-    $query .= ") VALUES (";
-    $query .= "'{$username}', '{$password}'";
-    $query .= ")";
-    $result = mysqli_query($connection, $query);
+    // Attempt login
+    $found_admin = attempt_login($username, $password);
 
-    if ($result) {
+    if ($found_admin) {
         // Success
-        $_SESSION["message"] = "Admin Created Successfully.";
-        redirect_to("manage_admins.php");
+        // Mark user as logged in
+        $_SESSION["admin_id"] = $found_admin["id"];
+        $_SESSION["username"] = $found_admin["username"];
+        redirect_to("admin.php");
     } else {
         // Failure
-        $message = "Database insert failed- - subject_id: {$_GET["subject"]}, menu_name: {$menu_name}, position: {$position},
-        visible: {$visible}, content: {$content}. SQL query: {$query}";
-        redirect_to("new_admin.php");
+        $_SESSION["message"] = "Username and password incorrect.";
     }
 }
 ?>
@@ -48,24 +45,22 @@ if (isset($_POST['submit'])) {
 
 <div id="main">
     <div id="navigation">
-        <?php echo navigation($current_subject, $current_page); ?>
     </div>
     <div id="page">
         <?php echo message(); ?>
         <?php $errors = errors(); ?>
         <?php echo form_errors($errors); ?>
-        <h2>Create Admin User</h2>
-        <form action="new_admin.php?; ?>" method="post">
+        <h2>Login</h2>
+        <form action="login.php" method="post">
             <p>Username:
-                <input type="text" name="username" value=""/>
+                <input type="text" name="username" value="<?php echo htmlentities($username); ?>"/>
             </p>
             <p>Password:
                 <input type="password" name="password" value=""/>
             </p>
-            <input type="submit" name="submit" value="Create Admin"/>
+            <input type="submit" name="submit" value="Submit"/>
         </form>
         <br/>
-        <a href="manage_content.php">Cancel</a>
     </div>
 </div>
 
